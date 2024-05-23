@@ -55,7 +55,7 @@ jobs:
           DATABASE_URL: postgres://db_user:12345@127.0.0.1:5440/great_danes_test
         run: |
           php bin/console doctrine:database:create --if-not-exists --env=test
-          php bin/console doctrine:migrations:version --all --delete --env=test
+          php bin/console doctrine:migrations:diff --env=test
           php bin/console doctrine:migrations:migrate --no-interaction --env=test
 
       - name: Run tests
