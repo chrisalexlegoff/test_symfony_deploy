@@ -51,9 +51,11 @@ jobs:
         run: composer install --prefer-dist --no-progress --no-suggest
 
       - name: Set up database
+        env:
+          DATABASE_URL: postgres://db_user:12345@127.0.0.1:5440/great_danes_test
         run: |
-          php bin/console doctrine:database:create --if-not-exists
-          php bin/console doctrine:schema:update --force
+          php bin/console doctrine:database:create --if-not-exists --env=test
+          php bin/console doctrine:migrations:migrate --no-interaction --env=test
 
       - name: Run tests
         run: ./vendor/bin/phpunit
@@ -69,7 +71,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.0
+          php-version: 8.3
           extensions: mbstring, intl, pdo, pdo_pgsql
           coverage: none
 
