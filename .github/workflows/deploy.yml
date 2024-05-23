@@ -1,13 +1,28 @@
-name: Deploy
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:12
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: symfony
+          POSTGRES_USER: symfony
+          POSTGRES_PASSWORD: symfony
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout code
@@ -16,20 +31,63 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: 8.3
+          extensions: mbstring, intl, pdo, pdo_pgsql
+          coverage: none
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: |
+          echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
 
       - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Set up database
         run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run build
+          php bin/console doctrine:database:create --if-not-exists
+          php bin/console doctrine:schema:update --force
 
       - name: Run tests
         run: ./vendor/bin/phpunit
 
-      - name: Deploy to Server
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.0
+          extensions: mbstring, intl, pdo, pdo_pgsql
+          coverage: none
+
+      - name: Install dependencies
+        env:
+          APP_ENV: prod
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Deploy to production
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          REMOTE_PATH: ${{ secrets.REMOTE_PATH }}
           APP_ENV: prod
         run: |
-          ssh -i $SSH_PRIVATE_KEY user@your_server 'cd /path/to/project && git pull origin main && composer install --no-dev --optimize-autoloader && php bin/console doctrine:migrations:migrate && npm install && npm run build && sudo chown -R www-data:www-data var/cache var/log'
+          echo "$SSH_PRIVATE_KEY" > private_key
+          chmod 600 private_key
+          rsync -avz --exclude='/.git/' -e "ssh -i private_key" ./ $REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH
+          ssh -i private_key $REMOTE_USER@$REMOTE_HOST "cd $REMOTE_PATH && composer install --no-dev --optimize-autoloader && php bin/console cache:clear --env=prod && php bin/console doctrine:migrations:migrate --no-interaction --env=prod"
+          rm private_key
