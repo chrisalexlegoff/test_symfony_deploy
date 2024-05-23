@@ -13,7 +13,7 @@ jobs:
       postgres:
         image: postgres:14
         ports:
-          - 5440:5432
+          - 5450:5432
         env:
           POSTGRES_DB: great_danes
           POSTGRES_USER: db_user
@@ -52,7 +52,7 @@ jobs:
 
       - name: Set up database
         env:
-          DATABASE_URL: postgres://db_user:12345@127.0.0.1:5440/great_danes
+          DATABASE_URL: postgres://db_user:12345@127.0.0.1:5450/great_danes
         run: |
           php bin/console doctrine:database:create --if-not-exists --env=test
           php bin/console doctrine:schema:drop --full-database --force --env=test
