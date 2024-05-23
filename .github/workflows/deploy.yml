@@ -100,10 +100,6 @@ jobs:
       - name: Set up database
         env:
           DATABASE_URL: postgres://db_user:12345@127.0.0.1:5440/great_danes
-        run: |
-          php bin/console doctrine:database:create --if-not-exists
-
-      - name: Execute migrations
         run: php bin/console doctrine:migrations:migrate --no-interaction
 
       - name: Deploy to production
