@@ -13,7 +13,7 @@ jobs:
       postgres:
         image: postgres:12
         ports:
-          - 5432:5432
+          - 5440:5432
         env:
           POSTGRES_DB: symfony
           POSTGRES_USER: symfony
