@@ -51,8 +51,6 @@ jobs:
         run: composer install --prefer-dist --no-progress --no-suggest
 
       - name: Set up database
-        env:
-          DATABASE_URL: postgres://db_user:12345@127.0.0.1:5440/great_danes
         run: |
           php bin/console doctrine:database:create --if-not-exists --env=test
           php bin/console doctrine:schema:drop --full-database --force --env=test
