@@ -52,7 +52,7 @@ jobs:
 
       - name: Set up database
         env:
-          DATABASE_URL: postgres://db_user:12345@127.0.0.1:5440/great_danes_test
+          DATABASE_URL: postgres://db_user:12345@127.0.0.1:5440/great_danes
         run: |
           php bin/console doctrine:schema:drop --full-database --force --env=test
           php bin/console doctrine:schema:create --env=test
