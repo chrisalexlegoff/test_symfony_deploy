@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  db:
+  db_great_danes:
     image: postgres
     ports:
       - '${POSTGRES_PORT}:5432'
@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - great_danes_data:/var/lib/postgresql/data
+      - great_danes_new_data:/var/lib/postgresql/data
 
 volumes:
-  great_danes_data:
+  great_danes_new_data:
